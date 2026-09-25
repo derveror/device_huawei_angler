@@ -30,6 +30,7 @@ QUALCOMM_EXPLICIT_PATHS = {
 }
 FACTORY_ONLY_CLOSURE_PATHS = {
     'vendor/lib/libaudcal.so',
+    'vendor/lib/libmmcamera_imglib.so',
     'vendor/lib/libmmcamera2_imglib_modules.so',
     'vendor/lib/libmmcamera2_isp_modules.so',
     'vendor/lib/libmmcamera2_sensor_debug.so',
@@ -188,8 +189,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
         'This tree is generated from official Google OPM7.181205.001 inputs. '
         'Every admitted source file is byte-identical to the factory image. '
         'Most are covered by the official Huawei vendor-image package or an '
-        'explicit Qualcomm extraction path. Six closure files (two '
-        'libaudcal and four camera libraries) are factory-only because '
+        'explicit Qualcomm extraction path. Seven closure files (two '
+        'libaudcal and five camera libraries) are factory-only because '
         'the same paths in the Huawei package contain different bytes; their '
         'provenance is recorded explicitly. The ISP module is regenerated '
         'from the exact stock input with a scoped Android P mutex/FORTIFY '
