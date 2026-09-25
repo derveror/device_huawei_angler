@@ -28,6 +28,10 @@ TARGET_BOARD_INFO_FILE := $(DEVICE_PATH)/board-info.txt
 # Platform
 TARGET_BOARD_PLATFORM := msm8994
 
+# Qualcomm source modules restored from the pinned LineageOS-UL msm8994 tree.
+BOARD_VENDOR_QCOM_GPS_LOC_API_HARDWARE := $(TARGET_BOARD_PLATFORM)
+BOARD_VENDOR_QCOM_LOC_PDK_FEATURE_SET := true
+
 # VINTF. Stage 8 adds one proven service declaration at a time.
 DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/manifest.xml
 DEVICE_MATRIX_FILE := $(DEVICE_PATH)/compatibility_matrix.xml
