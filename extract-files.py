@@ -49,6 +49,14 @@ QDUTILS_FIXUP_PATHS = {
     'vendor/lib/libmm-qdcm.so',
     'vendor/lib64/libmm-qdcm.so',
 }
+ART_COMPILER_FIXUP = (
+    'remove unused DT_NEEDED libart-compiler.so; '
+    'zero imported-symbol overlap'
+)
+ART_COMPILER_FIXUP_PATHS = {
+    'vendor/lib/lib-imsrcscmclient.so',
+    'vendor/lib64/lib-imsrcscmclient.so',
+}
 Q3A64_COPY_RULE_PATH = 'vendor/lib64/libmmcamera2_q3a_core.so'
 Q3A64_COPY_RULE_PROVENANCE = (
     'exact copy rule: stock has no 64-bit libmmcamera2_is provider; '
@@ -62,6 +70,9 @@ blob_fixups = {
     ),
     tuple(sorted(QDUTILS_FIXUP_PATHS)): blob_fixup().remove_needed(
         'libqdutils.so',
+    ),
+    tuple(sorted(ART_COMPILER_FIXUP_PATHS)): blob_fixup().remove_needed(
+        'libart-compiler.so',
     ),
 }
 
@@ -114,6 +125,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixup = LIBSTDCXX_FIXUP
         elif file.dst in QDUTILS_FIXUP_PATHS:
             fixup = QDUTILS_FIXUP
+        elif file.dst in ART_COMPILER_FIXUP_PATHS:
+            fixup = ART_COMPILER_FIXUP
         elif file.dst == Q3A64_COPY_RULE_PATH:
             fixup = Q3A64_COPY_RULE_PROVENANCE
         else:
