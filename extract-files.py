@@ -32,6 +32,11 @@ LIBSTDCXX_FIXUP_PATHS = {
     'vendor/lib/libgoog_rownr.so',
     'vendor/lib/libmmcamera_faceproc.so',
 }
+Q3A64_COPY_RULE_PATH = 'vendor/lib64/libmmcamera2_q3a_core.so'
+Q3A64_COPY_RULE_PROVENANCE = (
+    'exact copy rule: stock has no 64-bit libmmcamera2_is provider; '
+    'runtime camera daemon is 32-bit'
+)
 
 blob_fixups = {
     tuple(sorted(LIBSTDCXX_FIXUP_PATHS)): blob_fixup().replace_needed(
@@ -84,6 +89,12 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             if file.src in QUALCOMM_EXPLICIT_PATHS
             else HUAWEI_LICENSE_PROVENANCE
         )
+        if file.dst in LIBSTDCXX_FIXUP_PATHS:
+            fixup = LIBSTDCXX_FIXUP
+        elif file.dst == Q3A64_COPY_RULE_PATH:
+            fixup = Q3A64_COPY_RULE_PROVENANCE
+        else:
+            fixup = 'none'
         rows.append(
             (
                 file.src,
@@ -94,7 +105,7 @@ def write_blob_metadata(_ctx: PostprocessCtx):
                 elf_class,
                 machine,
                 license_provenance,
-                LIBSTDCXX_FIXUP if file.dst in LIBSTDCXX_FIXUP_PATHS else 'none',
+                fixup,
             )
         )
 
