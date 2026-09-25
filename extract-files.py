@@ -163,6 +163,7 @@ module = ExtractUtilsModule(
     'angler',
     'huawei',
     blob_fixups=blob_fixups,
+    namespace_imports=['vendor/qcom/opensource/dataservices'],
 )
 module.add_postprocess_fn(write_blob_metadata)
 
