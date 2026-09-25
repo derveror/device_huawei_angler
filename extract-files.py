@@ -7,6 +7,7 @@ import hashlib
 from pathlib import Path
 
 from extract_utils.file import File
+from extract_utils.fixups_blob import blob_fixup
 from extract_utils.main import ExtractUtils, ExtractUtilsModule
 from extract_utils.postprocess import PostprocessCtx
 
@@ -22,6 +23,21 @@ QUALCOMM_EXPLICIT_PATHS = {
     'system/bin/subsystem_ramdump',
     'system/etc/permissions/cneapiclient.xml',
     'system/etc/permissions/qcrilhook.xml',
+}
+LIBSTDCXX_FIXUP = (
+    'replace DT_NEEDED libstdc++.so with source-built libstdc++_vendor.so'
+)
+LIBSTDCXX_FIXUP_PATHS = {
+    'vendor/lib/libgoog_eis_armeabi-v7a.so',
+    'vendor/lib/libgoog_rownr.so',
+    'vendor/lib/libmmcamera_faceproc.so',
+}
+
+blob_fixups = {
+    tuple(sorted(LIBSTDCXX_FIXUP_PATHS)): blob_fixup().replace_needed(
+        'libstdc++.so',
+        'libstdc++_vendor.so',
+    ),
 }
 
 
@@ -78,6 +94,7 @@ def write_blob_metadata(_ctx: PostprocessCtx):
                 elf_class,
                 machine,
                 license_provenance,
+                LIBSTDCXX_FIXUP if file.dst in LIBSTDCXX_FIXUP_PATHS else 'none',
             )
         )
 
@@ -91,6 +108,7 @@ def write_blob_metadata(_ctx: PostprocessCtx):
         'elf_class',
         'machine',
         'license_provenance',
+        'fixup',
     )
     lines = ['\t'.join(fields), *('\t'.join(row) for row in rows)]
     (vendor_path / 'BLOB_PROVENANCE.tsv').write_text('\n'.join(lines) + '\n')
@@ -98,7 +116,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
     (vendor_path / 'README.md').write_text(
         '# Proprietary files for Google Nexus 6P (angler)\n\n'
         'This tree is generated from official Google OPM7.181205.001 inputs. '
-        'Every admitted file is byte-identical to the factory image and is '
+        'Every admitted source file is byte-identical to the factory image '
+        'and is '
         'covered by either the official Huawei vendor-image package or an '
         'explicit Qualcomm extraction path.\n\n'
         'Huawei archive SHA-256: '
@@ -106,7 +125,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
         'Qualcomm archive SHA-256: '
         '`78222d6c627020d8312477f647253b37569882ebdfe527207f39074dc05fc6a1`.\n\n'
         '`BLOB_PROVENANCE.tsv` records source/destination paths, SHA-256, '
-        'size, file type, ELF identity, and license provenance. License '
+        'size, file type, ELF identity, license provenance, and any scoped '
+        'output fixup. License '
         'acceptance for local extraction does not authorize unrestricted '
         'public redistribution; do not push proprietary bytes until that '
         'policy is reviewed separately.\n'
@@ -118,6 +138,7 @@ def write_blob_metadata(_ctx: PostprocessCtx):
 module = ExtractUtilsModule(
     'angler',
     'huawei',
+    blob_fixups=blob_fixups,
 )
 module.add_postprocess_fn(write_blob_metadata)
 
