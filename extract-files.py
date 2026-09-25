@@ -31,6 +31,7 @@ QUALCOMM_EXPLICIT_PATHS = {
 FACTORY_ONLY_CLOSURE_PATHS = {
     'vendor/lib/libaudcal.so',
     'vendor/lib/libmmcamera2_imglib_modules.so',
+    'vendor/lib/libmmcamera2_isp_modules.so',
     'vendor/lib/libmmcamera2_sensor_debug.so',
     'vendor/lib/libmmcamera2_sensor_modules.so',
     'vendor/lib64/libaudcal.so',
@@ -58,6 +59,11 @@ ART_COMPILER_FIXUP_PATHS = {
     'vendor/lib/lib-imsrcscmclient.so',
     'vendor/lib64/lib-imsrcscmclient.so',
 }
+ISP_MUTEX_FIXUP_PATH = 'vendor/lib/libmmcamera2_isp_modules.so'
+ISP_MUTEX_FIXUP = (
+    'move CBNZ before mutex destruction for Android P FORTIFY; '
+    'PixelBoot provenance 1b95fec2e5f4e5c2432e5885d5ef705e82ecb245'
+)
 Q3A64_COPY_RULE_PATH = 'vendor/lib64/libmmcamera2_q3a_core.so'
 Q3A64_COPY_RULE_PROVENANCE = (
     'exact copy rule: stock has no 64-bit libmmcamera2_is provider; '
@@ -74,6 +80,20 @@ blob_fixups = {
     ),
     tuple(sorted(ART_COMPILER_FIXUP_PATHS)): blob_fixup().remove_needed(
         'libart-compiler.so',
+    ),
+    ISP_MUTEX_FIXUP_PATH: blob_fixup().sig_replace(
+        (
+            '06 9A 02 F5 46 3E 0E F5 EA 70 20 F0 5C FC 06 99 '
+            '01 F5 46 30 00 F5 EC 70 20 F0 55 FC 06 9B 03 F5 '
+            '46 3C 0C F5 EE 70 20 F0 4E FC 06 9E 06 F5 46 32 '
+            '02 F5 E8 70 20 F0 4F FC 0C B9'
+        ),
+        (
+            'EC B9 06 9A 02 F5 46 3E 0E F5 EA 70 20 F0 5B FC '
+            '06 99 01 F5 46 30 00 F5 EC 70 20 F0 54 FC 06 9B '
+            '03 F5 46 3C 0C F5 EE 70 20 F0 4D FC 06 9E 06 F5 '
+            '46 32 02 F5 E8 70 20 F0 4E FC'
+        ),
     ),
 }
 
@@ -128,6 +148,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixup = QDUTILS_FIXUP
         elif file.dst in ART_COMPILER_FIXUP_PATHS:
             fixup = ART_COMPILER_FIXUP
+        elif file.dst == ISP_MUTEX_FIXUP_PATH:
+            fixup = ISP_MUTEX_FIXUP
         elif file.dst == Q3A64_COPY_RULE_PATH:
             fixup = Q3A64_COPY_RULE_PROVENANCE
         else:
@@ -166,10 +188,12 @@ def write_blob_metadata(_ctx: PostprocessCtx):
         'This tree is generated from official Google OPM7.181205.001 inputs. '
         'Every admitted source file is byte-identical to the factory image. '
         'Most are covered by the official Huawei vendor-image package or an '
-        'explicit Qualcomm extraction path. Five closure files (two '
-        'libaudcal and three camera libraries) are factory-only because '
+        'explicit Qualcomm extraction path. Six closure files (two '
+        'libaudcal and four camera libraries) are factory-only because '
         'the same paths in the Huawei package contain different bytes; their '
-        'provenance is recorded explicitly.\n\n'
+        'provenance is recorded explicitly. The ISP module is regenerated '
+        'from the exact stock input with a scoped Android P mutex/FORTIFY '
+        'instruction fix whose upstream provenance is pinned in the metadata.\n\n'
         'Huawei archive SHA-256: '
         '`2eb9a77de059739d33c7fad07e34034f03a93d70eea39460bb0d9278e5763053`.\n\n'
         'Qualcomm archive SHA-256: '
