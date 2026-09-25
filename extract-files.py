@@ -54,7 +54,7 @@ QDUTILS_FIXUP_PATHS = {
     'vendor/lib64/libmm-qdcm.so',
 }
 ART_COMPILER_FIXUP = (
-    'remove unused DT_NEEDED libart-compiler.so; '
+    'remove unused DT_NEEDED libart-compiler.so and libart.so; '
     'zero imported-symbol overlap'
 )
 ART_COMPILER_FIXUP_PATHS = {
@@ -80,8 +80,10 @@ blob_fixups = {
     tuple(sorted(QDUTILS_FIXUP_PATHS)): blob_fixup().remove_needed(
         'libqdutils.so',
     ),
-    tuple(sorted(ART_COMPILER_FIXUP_PATHS)): blob_fixup().remove_needed(
-        'libart-compiler.so',
+    tuple(sorted(ART_COMPILER_FIXUP_PATHS)): (
+        blob_fixup()
+        .remove_needed('libart-compiler.so')
+        .remove_needed('libart.so')
     ),
     ISP_MUTEX_FIXUP_PATH: blob_fixup().sig_replace(
         (
