@@ -233,7 +233,7 @@ vendor/lib/libmm-abl-oem.so|f7f4321878092559774bab6cb694ff0233874c9d
 vendor/lib/libmm-abl.so|ea2de04d77d7a9a05e4e0c4ea6bff8bce12b975f
 vendor/lib/libmm-als.so|551ed689e79b4b15bfd3369b1836b3370ceee311
 vendor/lib/libmm-disp-apis.so|5475bf3d21201ce75597202ce81c4b15ce5b6868
-vendor/lib/libmm-qdcm.so|28a48210e99bcc18c2cdce9b3a2d527119858878
+vendor/lib/libmm-qdcm.so|28a48210e99bcc18c2cdce9b3a2d527119858878|017ce72ce9b672ccd442a6807e68b698c129729f
 vendor/lib/libmmcamera2_c2d_module.so|f85eebab2037614f36d84f53693b96352723a26c
 vendor/lib/libmmcamera2_cpp_module.so|ba067772aa34990b25342925535e99fa7930d43a
 vendor/lib/libmmcamera2_frame_algorithm.so|830575b77e7ad5584c475d6aca4f02cfed1410a1
@@ -417,7 +417,7 @@ vendor/lib64/libmm-abl-oem.so|e0be13ff2e0442f61c41921644f3be9e837d96a2
 vendor/lib64/libmm-abl.so|15dca7cffaf16a4908843368e7a99c7c8f899dde
 vendor/lib64/libmm-als.so|1eb68fc3bf20c65ef62e77f8bd734324781bd849
 vendor/lib64/libmm-disp-apis.so|157a9d0e3229ae53ecae7a0dcf7cf9762804ff7f
-vendor/lib64/libmm-qdcm.so|903506ce73b1cf4304ba1fe366983525640fa6ca
+vendor/lib64/libmm-qdcm.so|903506ce73b1cf4304ba1fe366983525640fa6ca|a6f60e7d5bc1864c3b3da6923b6f1b69ee3f5c32
 vendor/lib64/libmmcamera2_q3a_core.so;MAKE_COPY_RULE_ONLY|2b000e14023a03dbd5c69d8b2fdb019a88a517b9
 vendor/lib64/libmmcamera2_stats_algorithm.so|03b3e99aacd0778e3bb3f0a8ef44c740f4a2f0aa
 vendor/lib64/libnetmgr.so|e2794e8aa01352436d73274e2e6dc0629ec30449
