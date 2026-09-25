@@ -156,6 +156,7 @@ vendor/lib/libadm.so|51169441488c2a13ec0d30526429b57b9b05dcf2
 vendor/lib/libadpcmdec.so|1f36cbd1913b473bdc6ab6be9bbd03fc64408750
 vendor/lib/libadreno_utils.so|4fd27f46943412ddbb69c4e32059a3a765db8b9a
 vendor/lib/libadsprpc.so|f08785760b23f5ccc0c2e39750b99ec57cfc20d7
+vendor/lib/libaudcal.so|2396195ae02a890a56af057b6b13bd3d200f21c5
 vendor/lib/libaudioalsa.so|126b9543d1fe13379e66dbdac776f0ba55b6be04
 vendor/lib/libbccQTI.so|7cd380e1ce6c80fa57bec7d9f81f7826382ccea7
 vendor/lib/libc2d30-a3xx.so|208a064cc4fe7f393e82b4ee0370ca59dbe518f1
@@ -373,6 +374,7 @@ vendor/lib64/libacdbrtac.so|121d43202c83d2fe6e4b9c4324414811963bfc9c
 vendor/lib64/libadiertac.so|c8fa7fed948e50a9ac2c33012572c032839ae0ee
 vendor/lib64/libadreno_utils.so|6e6252196f0b510989a6f4f54a4bb3492f56e695
 vendor/lib64/libadsprpc.so|b002b2795e637b1013bef6039fcbde4ee6627f9f
+vendor/lib64/libaudcal.so|6e126cf4a15bc4ef24337562468f547b98780eb2
 vendor/lib64/libaudioalsa.so|f1a3da7ade345a7b18bb12870a8fa9e646c0c0c2
 vendor/lib64/libbccQTI.so|e39a9a997196757a9830dd217dba086581b35a4d
 vendor/lib64/libc2d30-a3xx.so|874101006b6ee601ab4245f99927ae29bcffa020

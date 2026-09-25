@@ -18,11 +18,19 @@ HUAWEI_LICENSE_PROVENANCE = (
 QUALCOMM_LICENSE_PROVENANCE = (
     'Qualcomm official driver explicit path; OPM7.181205.001'
 )
+FACTORY_ONLY_LICENSE_PROVENANCE = (
+    'Google factory image exact; differs from Huawei driver package; '
+    'local closure only; OPM7.181205.001'
+)
 QUALCOMM_EXPLICIT_PATHS = {
     'system/bin/ssr_setup',
     'system/bin/subsystem_ramdump',
     'system/etc/permissions/cneapiclient.xml',
     'system/etc/permissions/qcrilhook.xml',
+}
+FACTORY_ONLY_CLOSURE_PATHS = {
+    'vendor/lib/libaudcal.so',
+    'vendor/lib64/libaudcal.so',
 }
 LIBSTDCXX_FIXUP = (
     'replace DT_NEEDED libstdc++.so with source-built libstdc++_vendor.so'
@@ -84,11 +92,12 @@ def write_blob_metadata(_ctx: PostprocessCtx):
     for file in _iter_proprietary_files(device_path / 'proprietary-files.txt'):
         blob = proprietary_path / file.dst
         kind, elf_class, machine = _classify_blob(blob, file.dst)
-        license_provenance = (
-            QUALCOMM_LICENSE_PROVENANCE
-            if file.src in QUALCOMM_EXPLICIT_PATHS
-            else HUAWEI_LICENSE_PROVENANCE
-        )
+        if file.src in QUALCOMM_EXPLICIT_PATHS:
+            license_provenance = QUALCOMM_LICENSE_PROVENANCE
+        elif file.src in FACTORY_ONLY_CLOSURE_PATHS:
+            license_provenance = FACTORY_ONLY_LICENSE_PROVENANCE
+        else:
+            license_provenance = HUAWEI_LICENSE_PROVENANCE
         if file.dst in LIBSTDCXX_FIXUP_PATHS:
             fixup = LIBSTDCXX_FIXUP
         elif file.dst == Q3A64_COPY_RULE_PATH:
@@ -127,10 +136,11 @@ def write_blob_metadata(_ctx: PostprocessCtx):
     (vendor_path / 'README.md').write_text(
         '# Proprietary files for Google Nexus 6P (angler)\n\n'
         'This tree is generated from official Google OPM7.181205.001 inputs. '
-        'Every admitted source file is byte-identical to the factory image '
-        'and is '
-        'covered by either the official Huawei vendor-image package or an '
-        'explicit Qualcomm extraction path.\n\n'
+        'Every admitted source file is byte-identical to the factory image. '
+        'Most are covered by the official Huawei vendor-image package or an '
+        'explicit Qualcomm extraction path. Two libaudcal closure files are '
+        'factory-only because the same paths in the Huawei package contain '
+        'different bytes; their provenance is recorded explicitly.\n\n'
         'Huawei archive SHA-256: '
         '`2eb9a77de059739d33c7fad07e34034f03a93d70eea39460bb0d9278e5763053`.\n\n'
         'Qualcomm archive SHA-256: '
