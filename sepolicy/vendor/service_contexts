@@ -1,0 +1,2 @@
+# Angler vendor service labels are added only when the matching service is
+# installed and registered.

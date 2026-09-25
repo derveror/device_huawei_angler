@@ -1,0 +1,2 @@
+# Angler vendor file labels are added only from a proven service or enforcing
+# AVC during the subsystem-specific bring-up stages.
