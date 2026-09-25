@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+     Stage 4 device compatibility matrix for angler.
+
+     Framework requirements are added only when the target source and product
+     graph prove the corresponding dependency.
+-->
+<compatibility-matrix version="1.0" type="device"/>
