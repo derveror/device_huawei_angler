@@ -1,0 +1,12 @@
+// Copyright (C) 2016 The Android Open Source Project
+// Copyright (C) 2026 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
+cc_library_static {
+    name: "librecovery_ui_nanohub",
+    recovery_available: true,
+    defaults: ["recovery_defaults"],
+    srcs: ["nanohub_recovery_ui.cpp"],
+    shared_libs: ["librecovery_ui"],
+}

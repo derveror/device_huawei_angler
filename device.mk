@@ -14,6 +14,17 @@ PRODUCT_AAPT_PREBUILT_DPI := xxxhdpi xxhdpi xhdpi hdpi
 PRODUCT_CHARACTERISTICS := nosdcard
 
 $(call inherit-product, frameworks/native/build/phone-xhdpi-2048-dalvik-heap.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/non_ab_device.mk)
+
+# Root and recovery configuration
+PRODUCT_PACKAGES += \
+    fstab.angler \
+    init.angler.diag.rc \
+    init.angler.rc \
+    init.angler.sensorhub.rc \
+    init.angler.usb.rc \
+    init.recovery.angler.rc \
+    ueventd.angler.rc
 
 # Proprietary modules are generated in Stage 5 and remain optional here so the
 # open product contract can be parsed independently.

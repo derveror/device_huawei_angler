@@ -62,5 +62,7 @@ TARGET_COPY_OUT_VENDOR := vendor
 # Recovery
 TARGET_RECOVERY_FSTAB := device/huawei/angler/rootdir/etc/fstab.angler
 TARGET_RELEASETOOLS_EXTENSIONS := device/huawei/angler
+TARGET_RECOVERY_UI_LIB := librecovery_ui_nanohub
+BOARD_ROOT_EXTRA_FOLDERS := firmware persist
 
 -include vendor/huawei/angler/BoardConfigVendor.mk
