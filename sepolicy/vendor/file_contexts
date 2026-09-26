@@ -1,2 +1,7 @@
 # Angler vendor file labels are added only from a proven service or enforcing
 # AVC during the subsystem-specific bring-up stages.
+
+# BOARD_ROOT_EXTRA_FOLDERS places these empty mountpoints in the system image.
+# Keep their build-time label generic until runtime AVCs justify dedicated types.
+/firmware                  u:object_r:rootfs:s0
+/persist                   u:object_r:rootfs:s0
