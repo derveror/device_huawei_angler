@@ -1,0 +1,14 @@
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+
+cc_library_shared {
+    name: "librs_legacy_math_shim",
+    vendor: true,
+    compile_multilib: "32",
+    srcs: ["RenderScriptLegacyMath.cpp"],
+    shared_libs: ["libm"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}

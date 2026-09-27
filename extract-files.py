@@ -136,6 +136,10 @@ SURFACE_SHIM_FIXUP_PATHS = {
 SURFACE_SHIM_FIXUP = (
     'add forwarding Surface constructor shim with null control handle'
 )
+RS_FLOOR_SHIM_FIXUP_PATH = 'vendor/lib/librs.rnr_process.so'
+RS_FLOOR_SHIM_FIXUP = (
+    'add forwarding RenderScript SC_floorf shim'
+)
 ISP_MUTEX_FIXUP_PATH = 'vendor/lib/libmmcamera2_isp_modules.so'
 ISP_MUTEX_FIXUP = (
     'move CBNZ before mutex destruction for Android P FORTIFY; '
@@ -351,6 +355,9 @@ blob_fixups = {
     tuple(sorted(SURFACE_SHIM_FIXUP_PATHS)): (
         blob_fixup().add_needed('libsurface_legacy_shim.so')
     ),
+    RS_FLOOR_SHIM_FIXUP_PATH: (
+        blob_fixup().add_needed('librs_legacy_math_shim.so')
+    ),
     tuple(sorted(SCHED_POLICY_FIXUP_PATHS)): (
         blob_fixup().add_needed('libprocessgroup.so')
     ),
@@ -445,6 +452,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixups.append(POWER_MANAGER_SHIM_FIXUP)
         if file.dst in SURFACE_SHIM_FIXUP_PATHS:
             fixups.append(SURFACE_SHIM_FIXUP)
+        if file.dst == RS_FLOOR_SHIM_FIXUP_PATH:
+            fixups.append(RS_FLOOR_SHIM_FIXUP)
         if file.dst == ISP_MUTEX_FIXUP_PATH:
             fixups.append(ISP_MUTEX_FIXUP)
         if file.dst == Q3A64_COPY_RULE_PATH:
