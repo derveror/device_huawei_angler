@@ -144,6 +144,13 @@ RIL_AUDIO_CALLBACK_SHIM_FIXUP_PATH = 'vendor/lib64/libril-qc-qmi-1.so'
 RIL_AUDIO_CALLBACK_SHIM_FIXUP = (
     'forward AudioSystem setErrorCallback to addErrorCallback'
 )
+WIDEVINE_PROTOBUF_FIXUP_PATHS = {
+    'vendor/lib/mediadrm/libwvdrmengine.so',
+    'vendor/lib64/mediadrm/libwvdrmengine.so',
+}
+WIDEVINE_PROTOBUF_FIXUP = (
+    'replace protobuf lite with source-built AOSP v28 compatibility library'
+)
 ISP_MUTEX_FIXUP_PATH = 'vendor/lib/libmmcamera2_isp_modules.so'
 ISP_MUTEX_FIXUP = (
     'move CBNZ before mutex destruction for Android P FORTIFY; '
@@ -365,6 +372,12 @@ blob_fixups = {
     RIL_AUDIO_CALLBACK_SHIM_FIXUP_PATH: (
         blob_fixup().add_needed('libaudioclient_legacy_shim.so')
     ),
+    tuple(sorted(WIDEVINE_PROTOBUF_FIXUP_PATHS)): (
+        blob_fixup().replace_needed(
+            'libprotobuf-cpp-lite.so',
+            'libprotobuf-cpp-lite-v28.so',
+        )
+    ),
     tuple(sorted(SCHED_POLICY_FIXUP_PATHS)): (
         blob_fixup().add_needed('libprocessgroup.so')
     ),
@@ -463,6 +476,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixups.append(RS_FLOOR_SHIM_FIXUP)
         if file.dst == RIL_AUDIO_CALLBACK_SHIM_FIXUP_PATH:
             fixups.append(RIL_AUDIO_CALLBACK_SHIM_FIXUP)
+        if file.dst in WIDEVINE_PROTOBUF_FIXUP_PATHS:
+            fixups.append(WIDEVINE_PROTOBUF_FIXUP)
         if file.dst == ISP_MUTEX_FIXUP_PATH:
             fixups.append(ISP_MUTEX_FIXUP)
         if file.dst == Q3A64_COPY_RULE_PATH:

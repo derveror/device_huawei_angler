@@ -340,7 +340,7 @@ vendor/lib/libtzdrmgenprov.so|ec10dca444699c68334e53786dadf6033bbb77f6|0e0f69887
 vendor/lib/libvoice-svc.so|d3aa31dfd1821e208135f62c5e7db83872071a54|e86ee3e433075a2814d4fdd8406ca59d7e815986
 vendor/lib/libwms.so|79e373dbec70e2156fbf821d94902713fdcd039e
 vendor/lib/libxml.so|e65714a79ca8fea364406533b52cb54f286a8948
-vendor/lib/mediadrm/libwvdrmengine.so|fb276a490ee3d630f9ba5ba751b00397a2f6dca0
+vendor/lib/mediadrm/libwvdrmengine.so|fb276a490ee3d630f9ba5ba751b00397a2f6dca0|a69a049c633bbfc1317f4dc0bac1ec5b111d8090
 vendor/lib/soundfx/libfmas.so|dc563142ef128f792c8ebe823a55f95fa0c45924
 vendor/lib64/egl/eglSubDriverAndroid.so|03e2c66eebed80a91b08e2c18d011844682bdd7b
 vendor/lib64/egl/libEGL_adreno.so|3193346e9938e05ce611db0d0f9e456009289ebd
@@ -454,7 +454,7 @@ vendor/lib64/libtzdrmgenprov.so|65610bc87716d2a981b21ccb0ea59bdd1d0fa9f6
 vendor/lib64/libvoice-svc.so|210a093485dfe4bc2263c9a7693e8f20aa4072fc|cefc35c1f8507a02feea5cddd05cb09c8b02fd48
 vendor/lib64/libwms.so|45af0350a65651d189d8337680c48e7170758cfb
 vendor/lib64/libxml.so|0835e4a101c4fb5a2bdd21abf6b00a0502d4b29e
-vendor/lib64/mediadrm/libwvdrmengine.so|66ee48a898609cc9caf1cc43a3460bbddbfa0bb0
+vendor/lib64/mediadrm/libwvdrmengine.so|66ee48a898609cc9caf1cc43a3460bbddbfa0bb0|b5dcc159e89bd99ae754d4b62e78d8c63ba2583a
 vendor/xbin/wlutil|284d60e7e77260297bfa1c664715527f69638148
 
 # Hardware services and executables (32)
