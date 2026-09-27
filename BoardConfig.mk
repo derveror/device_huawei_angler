@@ -74,6 +74,9 @@ TARGET_COPY_OUT_VENDOR := vendor
 TARGET_RECOVERY_FSTAB := device/huawei/angler/rootdir/etc/fstab.angler
 TARGET_RELEASETOOLS_EXTENSIONS := device/huawei/angler
 TARGET_RECOVERY_UI_LIB := librecovery_ui_nanohub
+# Angler's bootloader relocates the recovery ramdisk to 0x02700000. Keep the
+# compressed ramdisk below the 0x03400000 display reservation boundary.
+TARGET_RECOVERY_DENSITY := xhdpi
 BOARD_ROOT_EXTRA_FOLDERS := firmware persist
 
 -include vendor/huawei/angler/BoardConfigVendor.mk
