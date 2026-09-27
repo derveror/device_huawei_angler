@@ -47,6 +47,11 @@ LIBSTDCXX_FIXUP_PATHS = {
     'vendor/lib/libgoog_rownr.so',
     'vendor/lib/libmmcamera_faceproc.so',
 }
+FACEPROC_SONAME_FIXUP_PATH = 'vendor/lib/libmmcamera_faceproc.so'
+FACEPROC_SONAME_FIXUP = (
+    'set SONAME to installed libmmcamera_faceproc.so; '
+    'no DT_NEEDED consumers of old name'
+)
 QDUTILS_FIXUP = (
     'remove unused DT_NEEDED libqdutils.so; zero imported-symbol overlap'
 )
@@ -301,9 +306,16 @@ def _legacy_liblog_fixup(path):
 
 
 blob_fixups = {
-    tuple(sorted(LIBSTDCXX_FIXUP_PATHS)): blob_fixup().replace_needed(
+    tuple(
+        sorted(LIBSTDCXX_FIXUP_PATHS - {FACEPROC_SONAME_FIXUP_PATH})
+    ): blob_fixup().replace_needed(
         'libstdc++.so',
         'libstdc++_vendor.so',
+    ),
+    FACEPROC_SONAME_FIXUP_PATH: (
+        blob_fixup()
+        .replace_needed('libstdc++.so', 'libstdc++_vendor.so')
+        .fix_soname()
     ),
     'vendor/lib64/libmm-qdcm.so': blob_fixup().remove_needed('libqdutils.so'),
     'vendor/lib/libmm-qdcm.so': (
@@ -417,6 +429,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
         fixups = []
         if file.dst in LIBSTDCXX_FIXUP_PATHS:
             fixups.append(LIBSTDCXX_FIXUP)
+        if file.dst == FACEPROC_SONAME_FIXUP_PATH:
+            fixups.append(FACEPROC_SONAME_FIXUP)
         if file.dst in QDUTILS_FIXUP_PATHS:
             fixups.append(QDUTILS_FIXUP)
         if file.dst in ART_COMPILER_FIXUP_PATHS:
