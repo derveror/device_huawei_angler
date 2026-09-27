@@ -62,12 +62,52 @@ ART_COMPILER_FIXUP_PATHS = {
     'vendor/lib/lib-imsrcscmclient.so',
     'vendor/lib64/lib-imsrcscmclient.so',
 }
-IMSDPL_LOG_FIXUP_PATHS = {
+LEGACY_LIBLOG_FIXUP_PATHS = {
+    'vendor/bin/cnd',
+    'vendor/bin/imsdatadaemon',
+    'vendor/bin/imsqmidaemon',
+    'vendor/bin/loc_launcher',
+    'vendor/bin/port-bridge',
+    'vendor/lib/lib-imsSDP.so',
     'vendor/lib/lib-imsdpl.so',
+    'vendor/lib/lib-imss.so',
+    'vendor/lib/lib-rtpdaemoninterface.so',
+    'vendor/lib/libQSEEComAPI.so',
+    'vendor/lib/libcne.so',
+    'vendor/lib/libcneapiclient.so',
+    'vendor/lib/libmmcamera2_frame_algorithm.so',
+    'vendor/lib/libmmcamera2_is.so',
+    'vendor/lib/libmmcamera2_q3a_core.so',
+    'vendor/lib/libmmcamera2_stats_algorithm.so',
+    'vendor/lib/libmmcamera_cac2_lib.so',
+    'vendor/lib/libmmcamera_pdaf.so',
+    'vendor/lib/libmmcamera_pdafcamif.so',
+    'vendor/lib/libmmcamera_tintless_bg_pca_algo.so',
+    'vendor/lib64/lib-imsSDP.so',
     'vendor/lib64/lib-imsdpl.so',
+    'vendor/lib64/lib-imss.so',
+    'vendor/lib64/lib-rtpdaemoninterface.so',
+    'vendor/lib64/libQSEEComAPI.so',
+    'vendor/lib64/lib_fpc_tac_shared.so',
+    'vendor/lib64/libcne.so',
+    'vendor/lib64/libcneapiclient.so',
+    'vendor/lib64/libizat_core.so',
+    'vendor/lib64/liblbs_core.so',
+    'vendor/lib64/liblowi_client.so',
+    'vendor/lib64/liblowi_wifihal.so',
+    'vendor/lib64/libmmcamera2_q3a_core.so',
+    'vendor/lib64/libmmcamera2_stats_algorithm.so',
+    'vendor/lib64/libquipc_os_api.so',
 }
-IMSDPL_LOG_FIXUP = (
-    'add direct liblog DT_NEEDED for __android_log_print'
+LEGACY_LIBLOG_FIXUP = (
+    'add direct liblog DT_NEEDED for legacy Android log imports'
+)
+SCHED_POLICY_FIXUP_PATHS = {
+    'vendor/lib/libvoice-svc.so',
+    'vendor/lib64/libvoice-svc.so',
+}
+SCHED_POLICY_FIXUP = (
+    'add direct libprocessgroup DT_NEEDED for set_sched_policy'
 )
 ISP_MUTEX_FIXUP_PATH = 'vendor/lib/libmmcamera2_isp_modules.so'
 ISP_MUTEX_FIXUP = (
@@ -248,9 +288,16 @@ blob_fixups = {
         .remove_needed('libart.so')
         .call(retarget_libc_private_version, need_tmp_dir=False)
     ),
-    'vendor/lib64/lib-imsdpl.so': blob_fixup().add_needed('liblog.so'),
-    'vendor/lib/lib-imsdpl.so': (
-        _libc_private_fixup().add_needed('liblog.so')
+    **{
+        path: (
+            _libc_private_fixup().add_needed('liblog.so')
+            if path in LIBC_PRIVATE_VERSION_FIXUP_PATHS
+            else blob_fixup().add_needed('liblog.so')
+        )
+        for path in sorted(LEGACY_LIBLOG_FIXUP_PATHS)
+    },
+    tuple(sorted(SCHED_POLICY_FIXUP_PATHS)): (
+        blob_fixup().add_needed('libprocessgroup.so')
     ),
     ISP_MUTEX_FIXUP_PATH: blob_fixup().sig_replace(
         (
@@ -272,8 +319,8 @@ blob_fixups = {
             - {
                 'vendor/lib/libmm-qdcm.so',
                 'vendor/lib/lib-imsrcscmclient.so',
-                'vendor/lib/lib-imsdpl.so',
             }
+            - LEGACY_LIBLOG_FIXUP_PATHS
         )
     ): _libc_private_fixup(),
 }
@@ -330,8 +377,10 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixups.append(QDUTILS_FIXUP)
         if file.dst in ART_COMPILER_FIXUP_PATHS:
             fixups.append(ART_COMPILER_FIXUP)
-        if file.dst in IMSDPL_LOG_FIXUP_PATHS:
-            fixups.append(IMSDPL_LOG_FIXUP)
+        if file.dst in LEGACY_LIBLOG_FIXUP_PATHS:
+            fixups.append(LEGACY_LIBLOG_FIXUP)
+        if file.dst in SCHED_POLICY_FIXUP_PATHS:
+            fixups.append(SCHED_POLICY_FIXUP)
         if file.dst == ISP_MUTEX_FIXUP_PATH:
             fixups.append(ISP_MUTEX_FIXUP)
         if file.dst == Q3A64_COPY_RULE_PATH:
