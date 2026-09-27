@@ -62,6 +62,13 @@ ART_COMPILER_FIXUP_PATHS = {
     'vendor/lib/lib-imsrcscmclient.so',
     'vendor/lib64/lib-imsrcscmclient.so',
 }
+IMSDPL_LOG_FIXUP_PATHS = {
+    'vendor/lib/lib-imsdpl.so',
+    'vendor/lib64/lib-imsdpl.so',
+}
+IMSDPL_LOG_FIXUP = (
+    'add direct liblog DT_NEEDED for __android_log_print'
+)
 ISP_MUTEX_FIXUP_PATH = 'vendor/lib/libmmcamera2_isp_modules.so'
 ISP_MUTEX_FIXUP = (
     'move CBNZ before mutex destruction for Android P FORTIFY; '
@@ -241,6 +248,10 @@ blob_fixups = {
         .remove_needed('libart.so')
         .call(retarget_libc_private_version, need_tmp_dir=False)
     ),
+    'vendor/lib64/lib-imsdpl.so': blob_fixup().add_needed('liblog.so'),
+    'vendor/lib/lib-imsdpl.so': (
+        _libc_private_fixup().add_needed('liblog.so')
+    ),
     ISP_MUTEX_FIXUP_PATH: blob_fixup().sig_replace(
         (
             '06 9A 02 F5 46 3E 0E F5 EA 70 20 F0 5C FC 06 99 '
@@ -258,7 +269,11 @@ blob_fixups = {
     tuple(
         sorted(
             LIBC_PRIVATE_VERSION_FIXUP_PATHS
-            - {'vendor/lib/libmm-qdcm.so', 'vendor/lib/lib-imsrcscmclient.so'}
+            - {
+                'vendor/lib/libmm-qdcm.so',
+                'vendor/lib/lib-imsrcscmclient.so',
+                'vendor/lib/lib-imsdpl.so',
+            }
         )
     ): _libc_private_fixup(),
 }
@@ -315,6 +330,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixups.append(QDUTILS_FIXUP)
         if file.dst in ART_COMPILER_FIXUP_PATHS:
             fixups.append(ART_COMPILER_FIXUP)
+        if file.dst in IMSDPL_LOG_FIXUP_PATHS:
+            fixups.append(IMSDPL_LOG_FIXUP)
         if file.dst == ISP_MUTEX_FIXUP_PATH:
             fixups.append(ISP_MUTEX_FIXUP)
         if file.dst == Q3A64_COPY_RULE_PATH:
