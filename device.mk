@@ -7,6 +7,10 @@
 
 LOCAL_PATH := device/huawei/angler
 
+# Export the source-built rmnet provider to Kati so proprietary data-service
+# binaries retain their declared ELF dependency during Make conversion.
+PRODUCT_SOONG_NAMESPACES += vendor/qcom/opensource/dataservices
+
 # Resource selection follows the physical 1440 x 2560 display.
 PRODUCT_AAPT_CONFIG := normal
 PRODUCT_AAPT_PREF_CONFIG := 560dpi

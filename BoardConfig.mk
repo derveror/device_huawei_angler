@@ -31,6 +31,7 @@ TARGET_BOARD_PLATFORM := msm8994
 # Qualcomm source modules restored from the pinned LineageOS-UL msm8994 tree.
 BOARD_VENDOR_QCOM_GPS_LOC_API_HARDWARE := $(TARGET_BOARD_PLATFORM)
 BOARD_VENDOR_QCOM_LOC_PDK_FEATURE_SET := true
+$(call soong_config_set,rmnetctl,old_rmnet_data,true)
 
 # VINTF. Stage 8 adds one proven service declaration at a time.
 DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/manifest.xml
