@@ -71,6 +71,11 @@ Q3A64_COPY_RULE_PROVENANCE = (
     'exact copy rule: stock has no 64-bit libmmcamera2_is provider; '
     'runtime camera daemon is 32-bit'
 )
+DSUTILS_LIBC_VERSION_FIXUP_PATH = 'vendor/lib/libdsutils.so'
+DSUTILS_LIBC_VERSION_FIXUP = (
+    'retarget three legacy ARM EABI imports from LIBC_PRIVATE to the '
+    'ABI-identical LIBC_N aliases exported by current Bionic'
+)
 
 blob_fixups = {
     tuple(sorted(LIBSTDCXX_FIXUP_PATHS)): blob_fixup().replace_needed(
@@ -98,6 +103,17 @@ blob_fixups = {
             '03 F5 46 3C 0C F5 EE 70 20 F0 4D FC 06 9E 06 F5 '
             '46 32 02 F5 E8 70 20 F0 4E FC'
         ),
+    ),
+    DSUTILS_LIBC_VERSION_FIXUP_PATH: (
+        blob_fixup()
+        .sig_replace(
+            '4C 49 42 43 5F 50 52 49 56 41 54 45 00',
+            '4C 49 42 43 5F 4E 00 00 00 00 00 00 00',
+        )
+        .sig_replace(
+            'C5 CF 63 00 00 00 03 00 46 0A 00 00 00 00 00 00',
+            '3E 69 0D 05 00 00 03 00 46 0A 00 00 00 00 00 00',
+        )
     ),
 }
 
@@ -156,6 +172,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixup = ISP_MUTEX_FIXUP
         elif file.dst == Q3A64_COPY_RULE_PATH:
             fixup = Q3A64_COPY_RULE_PROVENANCE
+        elif file.dst == DSUTILS_LIBC_VERSION_FIXUP_PATH:
+            fixup = DSUTILS_LIBC_VERSION_FIXUP
         else:
             fixup = 'none'
         rows.append(
