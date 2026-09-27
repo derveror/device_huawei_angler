@@ -124,6 +124,13 @@ POWER_MANAGER_SHIM_FIXUP_PATHS = {
 POWER_MANAGER_SHIM_FIXUP = (
     'add forwarding power-manager namespace shim for legacy asInterface'
 )
+SURFACE_SHIM_FIXUP_PATHS = {
+    'vendor/lib/libimsmedia_jni.so',
+    'vendor/lib64/libimsmedia_jni.so',
+}
+SURFACE_SHIM_FIXUP = (
+    'add forwarding Surface constructor shim with null control handle'
+)
 ISP_MUTEX_FIXUP_PATH = 'vendor/lib/libmmcamera2_isp_modules.so'
 ISP_MUTEX_FIXUP = (
     'move CBNZ before mutex destruction for Android P FORTIFY; '
@@ -329,6 +336,9 @@ blob_fixups = {
     'vendor/lib/libmm-abl.so': (
         _libc_private_fixup().add_needed('libpowermanager_legacy_shim.so')
     ),
+    tuple(sorted(SURFACE_SHIM_FIXUP_PATHS)): (
+        blob_fixup().add_needed('libsurface_legacy_shim.so')
+    ),
     tuple(sorted(SCHED_POLICY_FIXUP_PATHS)): (
         blob_fixup().add_needed('libprocessgroup.so')
     ),
@@ -419,6 +429,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixups.append(CUTILS_STRING_SHIM_FIXUP)
         if file.dst in POWER_MANAGER_SHIM_FIXUP_PATHS:
             fixups.append(POWER_MANAGER_SHIM_FIXUP)
+        if file.dst in SURFACE_SHIM_FIXUP_PATHS:
+            fixups.append(SURFACE_SHIM_FIXUP)
         if file.dst == ISP_MUTEX_FIXUP_PATH:
             fixups.append(ISP_MUTEX_FIXUP)
         if file.dst == Q3A64_COPY_RULE_PATH:
