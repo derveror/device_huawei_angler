@@ -163,10 +163,10 @@ ISP_MUTEX_FIXUP = (
     'move CBNZ before mutex destruction for Android P FORTIFY; '
     'PixelBoot provenance 1b95fec2e5f4e5c2432e5885d5ef705e82ecb245'
 )
-Q3A64_COPY_RULE_PATH = 'vendor/lib64/libmmcamera2_q3a_core.so'
-Q3A64_COPY_RULE_PROVENANCE = (
-    'exact copy rule: stock has no 64-bit libmmcamera2_is provider; '
-    'runtime camera daemon is 32-bit'
+Q3A64_AUDIT_ONLY_PATH = 'vendor/lib64/libmmcamera2_q3a_core.so'
+Q3A64_AUDIT_ONLY_PROVENANCE = (
+    'audit-only: stock has no 64-bit libmmcamera2_is provider; '
+    'runtime camera daemon is 32-bit; omit from product'
 )
 LIBC_PRIVATE_VERSION_FIXUP_PATHS = {
     'vendor/lib/hw/gatekeeper.msm8994.so',
@@ -492,8 +492,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixups.append(WIDEVINE_PROTOBUF_FIXUP)
         if file.dst == ISP_MUTEX_FIXUP_PATH:
             fixups.append(ISP_MUTEX_FIXUP)
-        if file.dst == Q3A64_COPY_RULE_PATH:
-            fixups.append(Q3A64_COPY_RULE_PROVENANCE)
+        if file.dst == Q3A64_AUDIT_ONLY_PATH:
+            fixups.append(Q3A64_AUDIT_ONLY_PROVENANCE)
         if file.dst in LIBC_PRIVATE_VERSION_FIXUP_PATHS:
             fixups.append(LIBC_PRIVATE_VERSION_FIXUP)
         fixup = '; '.join(fixups) if fixups else 'none'
