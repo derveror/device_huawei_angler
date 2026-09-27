@@ -438,7 +438,7 @@ vendor/lib64/libqmi_oem_api.so|405f31484f4a4f6247c1000438c391d25be1942c
 vendor/lib64/libqmiservices.so|1296c131125d22cf8be732fd369f23ed99715926
 vendor/lib64/libqti-perfd-client.so|eb3bb8c51fd022efe89341ffb91d238e388256e9
 vendor/lib64/libquipc_os_api.so|507f821b97b311bd7ca9fd54025bb9c1203dda44|5c6e9db03df799c57d2774b29184ce797f4ddfae
-vendor/lib64/libril-qc-qmi-1.so|a03f2e794d3024f62c3597acdd2b386b0864cabd
+vendor/lib64/libril-qc-qmi-1.so|a03f2e794d3024f62c3597acdd2b386b0864cabd|bd46d3b36851582e71d866afdc36488afde2fc5e
 vendor/lib64/libril-qcril-hook-oem.so|c83dbe34f191fbdea4f05eb10e557f4b15a49582
 vendor/lib64/librpmb.so|1ac3db51db595fb985072da0c7d6a7407eefca85
 vendor/lib64/librs_adreno.so|18e913b6d8f79e4b8563a8c8a0b2475e609d4813
