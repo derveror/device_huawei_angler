@@ -144,6 +144,13 @@ RIL_AUDIO_CALLBACK_SHIM_FIXUP_PATH = 'vendor/lib64/libril-qc-qmi-1.so'
 RIL_AUDIO_CALLBACK_SHIM_FIXUP = (
     'forward AudioSystem setErrorCallback to addErrorCallback'
 )
+SENSOR_EVENTQUEUE_SHIM_FIXUP_PATHS = {
+    'vendor/bin/slim_daemon',
+    'vendor/lib/liboemcamera.so',
+}
+SENSOR_EVENTQUEUE_SHIM_FIXUP = (
+    'forward legacy SensorManager event queue with empty attribution tag'
+)
 WIDEVINE_PROTOBUF_FIXUP_PATHS = {
     'vendor/lib/mediadrm/libwvdrmengine.so',
     'vendor/lib64/mediadrm/libwvdrmengine.so',
@@ -372,6 +379,9 @@ blob_fixups = {
     RIL_AUDIO_CALLBACK_SHIM_FIXUP_PATH: (
         blob_fixup().add_needed('libaudioclient_legacy_shim.so')
     ),
+    tuple(sorted(SENSOR_EVENTQUEUE_SHIM_FIXUP_PATHS)): (
+        blob_fixup().add_needed('libsensor_eventqueue_legacy_shim.so')
+    ),
     tuple(sorted(WIDEVINE_PROTOBUF_FIXUP_PATHS)): (
         blob_fixup().replace_needed(
             'libprotobuf-cpp-lite.so',
@@ -476,6 +486,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixups.append(RS_FLOOR_SHIM_FIXUP)
         if file.dst == RIL_AUDIO_CALLBACK_SHIM_FIXUP_PATH:
             fixups.append(RIL_AUDIO_CALLBACK_SHIM_FIXUP)
+        if file.dst in SENSOR_EVENTQUEUE_SHIM_FIXUP_PATHS:
+            fixups.append(SENSOR_EVENTQUEUE_SHIM_FIXUP)
         if file.dst in WIDEVINE_PROTOBUF_FIXUP_PATHS:
             fixups.append(WIDEVINE_PROTOBUF_FIXUP)
         if file.dst == ISP_MUTEX_FIXUP_PATH:

@@ -1,0 +1,17 @@
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+
+cc_library_shared {
+    name: "libsensor_eventqueue_legacy_shim",
+    vendor: true,
+    compile_multilib: "both",
+    srcs: ["SensorManagerLegacy.cpp"],
+    shared_libs: [
+        "libsensor",
+        "libutils",
+    ],
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}
