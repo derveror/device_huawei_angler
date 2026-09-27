@@ -109,6 +109,14 @@ SCHED_POLICY_FIXUP_PATHS = {
 SCHED_POLICY_FIXUP = (
     'add direct libprocessgroup DT_NEEDED for set_sched_policy'
 )
+CUTILS_STRING_SHIM_FIXUP_PATHS = {
+    'vendor/bin/ATFWD-daemon',
+    'vendor/lib/libcne.so',
+    'vendor/lib64/libcne.so',
+}
+CUTILS_STRING_SHIM_FIXUP = (
+    'add source-built libcutils_shim DT_NEEDED for legacy UTF conversion'
+)
 ISP_MUTEX_FIXUP_PATH = 'vendor/lib/libmmcamera2_isp_modules.so'
 ISP_MUTEX_FIXUP = (
     'move CBNZ before mutex destruction for Android P FORTIFY; '
@@ -265,6 +273,19 @@ def _libc_private_fixup():
         need_tmp_dir=False,
     )
 
+
+def _legacy_liblog_fixup(path):
+    fixup = (
+        _libc_private_fixup()
+        if path in LIBC_PRIVATE_VERSION_FIXUP_PATHS
+        else blob_fixup()
+    )
+    fixup.add_needed('liblog.so')
+    if path in CUTILS_STRING_SHIM_FIXUP_PATHS:
+        fixup.add_needed('libcutils_shim.so')
+    return fixup
+
+
 blob_fixups = {
     tuple(sorted(LIBSTDCXX_FIXUP_PATHS)): blob_fixup().replace_needed(
         'libstdc++.so',
@@ -289,13 +310,12 @@ blob_fixups = {
         .call(retarget_libc_private_version, need_tmp_dir=False)
     ),
     **{
-        path: (
-            _libc_private_fixup().add_needed('liblog.so')
-            if path in LIBC_PRIVATE_VERSION_FIXUP_PATHS
-            else blob_fixup().add_needed('liblog.so')
-        )
+        path: _legacy_liblog_fixup(path)
         for path in sorted(LEGACY_LIBLOG_FIXUP_PATHS)
     },
+    tuple(
+        sorted(CUTILS_STRING_SHIM_FIXUP_PATHS - LEGACY_LIBLOG_FIXUP_PATHS)
+    ): blob_fixup().add_needed('libcutils_shim.so'),
     tuple(sorted(SCHED_POLICY_FIXUP_PATHS)): (
         blob_fixup().add_needed('libprocessgroup.so')
     ),
@@ -381,6 +401,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixups.append(LEGACY_LIBLOG_FIXUP)
         if file.dst in SCHED_POLICY_FIXUP_PATHS:
             fixups.append(SCHED_POLICY_FIXUP)
+        if file.dst in CUTILS_STRING_SHIM_FIXUP_PATHS:
+            fixups.append(CUTILS_STRING_SHIM_FIXUP)
         if file.dst == ISP_MUTEX_FIXUP_PATH:
             fixups.append(ISP_MUTEX_FIXUP)
         if file.dst == Q3A64_COPY_RULE_PATH:
