@@ -117,6 +117,13 @@ CUTILS_STRING_SHIM_FIXUP_PATHS = {
 CUTILS_STRING_SHIM_FIXUP = (
     'add source-built libcutils_shim DT_NEEDED for legacy UTF conversion'
 )
+POWER_MANAGER_SHIM_FIXUP_PATHS = {
+    'vendor/lib/libmm-abl.so',
+    'vendor/lib64/libmm-abl.so',
+}
+POWER_MANAGER_SHIM_FIXUP = (
+    'add forwarding power-manager namespace shim for legacy asInterface'
+)
 ISP_MUTEX_FIXUP_PATH = 'vendor/lib/libmmcamera2_isp_modules.so'
 ISP_MUTEX_FIXUP = (
     'move CBNZ before mutex destruction for Android P FORTIFY; '
@@ -316,6 +323,12 @@ blob_fixups = {
     tuple(
         sorted(CUTILS_STRING_SHIM_FIXUP_PATHS - LEGACY_LIBLOG_FIXUP_PATHS)
     ): blob_fixup().add_needed('libcutils_shim.so'),
+    'vendor/lib64/libmm-abl.so': (
+        blob_fixup().add_needed('libpowermanager_legacy_shim.so')
+    ),
+    'vendor/lib/libmm-abl.so': (
+        _libc_private_fixup().add_needed('libpowermanager_legacy_shim.so')
+    ),
     tuple(sorted(SCHED_POLICY_FIXUP_PATHS)): (
         blob_fixup().add_needed('libprocessgroup.so')
     ),
@@ -339,6 +352,7 @@ blob_fixups = {
             - {
                 'vendor/lib/libmm-qdcm.so',
                 'vendor/lib/lib-imsrcscmclient.so',
+                'vendor/lib/libmm-abl.so',
             }
             - LEGACY_LIBLOG_FIXUP_PATHS
         )
@@ -403,6 +417,8 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixups.append(SCHED_POLICY_FIXUP)
         if file.dst in CUTILS_STRING_SHIM_FIXUP_PATHS:
             fixups.append(CUTILS_STRING_SHIM_FIXUP)
+        if file.dst in POWER_MANAGER_SHIM_FIXUP_PATHS:
+            fixups.append(POWER_MANAGER_SHIM_FIXUP)
         if file.dst == ISP_MUTEX_FIXUP_PATH:
             fixups.append(ISP_MUTEX_FIXUP)
         if file.dst == Q3A64_COPY_RULE_PATH:
