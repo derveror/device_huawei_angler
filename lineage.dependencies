@@ -6,5 +6,10 @@
   {
     "repository": "android_vendor_huawei",
     "target_path": "vendor/huawei"
+  },
+  {
+    "repository": "android_packages_apps_PhhIms",
+    "target_path": "packages/apps/PhhIms",
+    "branch": "lineage-22.2-angler"
   }
 ]
