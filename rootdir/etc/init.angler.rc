@@ -14,6 +14,7 @@ on init
     write /sys/block/zram0/comp_algorithm lz4
     write /sys/block/zram0/max_comp_streams 4
     write /proc/sys/vm/page-cluster 0
+    write /proc/sys/vm/swappiness 100
 
 on fs
     mount_all /vendor/etc/fstab.angler --early
@@ -27,9 +28,14 @@ on post-fs
     restorecon_recursive /persist
     mkdir /persist/data/sfs 0700 system system
     mkdir /persist/data/tz 0700 system system
+    start qseecomd
 
 on early-boot
     setrlimit 8 67108864 67108864
+
+    # qseecomd is started during post-fs.  Boot the ADSP here so the WCD9330
+    # codec can enumerate through SLIMbus, as on current msm8994 references.
+    write /sys/kernel/boot_adsp/boot 1
 
 on boot
     mkdir /dev/cpuset/camera-daemon
@@ -51,8 +57,10 @@ on boot
     chmod 2770 /dev/socket/qmux_audio
     mkdir /dev/socket/qmux_gps 0770 gps gps
     chmod 2770 /dev/socket/qmux_gps
+    mkdir /dev/socket/netmgr 0750 radio radio
 
     setprop wifi.interface wlan0
+    chown wifi wifi /sys/module/bcmdhd/parameters/firmware_path
     write /proc/sys/net/core/rmem_max 8388608
     write /proc/sys/net/core/wmem_max 8388608
 
@@ -61,10 +69,105 @@ on post-fs-data
     write /sys/block/mmcblk0/queue/read_ahead_kb 2048
     write /sys/block/mmcblk0/queue/nr_requests 256
 
-    mkdir /data/misc/radio 0770 system radio
+    mkdir /data/vendor/wifi 0770 wifi wifi
+    mkdir /data/vendor/wifi/wpa 0770 wifi wifi
+    mkdir /data/vendor/wifi/wpa/sockets 0770 wifi wifi
+
+    mkdir /data/vendor/netmgr 0770 radio radio
     mkdir /data/misc/qsee 0770 system system
     mkdir /data/misc/camera 0770 camera camera
     mkdir /data/misc/display 0770 system graphics
     mkdir /data/time 0700 system system
     mkdir /data/audio 0770 media audio
     mkdir /data/vendor/nfc 0770 nfc nfc
+
+# The legacy Qualcomm camera HAL communicates with this stock daemon over
+# /data/misc/camera. It must be available before the HIDL provider probes HAL3.
+service qcamerasvr /vendor/bin/mm-qcamera-daemon
+    class main
+    user camera
+    group camera system inet input graphics
+    writepid /dev/cpuset/camera-daemon/tasks
+
+service qseecomd /vendor/bin/qseecomd
+    class core
+    user root
+    group root
+
+# Angler's stock/17.1 peripheral lifecycle is retained after the isolated
+# OnePlus late_start ordering experiment proved unrelated to missing DATA5.
+service per_mgr /vendor/bin/pm-service
+    class core
+    user root
+    group system net_raw
+    task_profiles ServiceCapacityLow
+
+service per_proxy /vendor/bin/pm-proxy
+    class core
+    user root
+    group system net_raw
+    task_profiles ServiceCapacityLow
+    disabled
+
+service rmt_storage /vendor/bin/rmt_storage
+    class core
+    user root
+    group system wakelock
+    task_profiles ServiceCapacityLow
+    shutdown critical
+
+on property:sys.shutdown.requested=*
+    stop per_proxy
+
+# The modem waits for this IPC Router security table before exposing its QMI
+# control channels.  Keep it ahead of qmuxd/netmgrd, matching working Angler,
+# OnePlus 2 and Sony msm8994 trees.
+service irsc_util /vendor/bin/irsc_util /vendor/etc/sec_config
+    class main
+    user root
+    oneshot
+
+# Qualcomm's stock QMI transport is shared by RIL and the mobile-data stack.
+service qmuxd /vendor/bin/qmuxd
+    class main
+    user root
+    group radio audio bluetooth wakelock gps
+    task_profiles ServiceCapacityLow
+
+service netmgrd /vendor/bin/netmgrd
+    class main
+    user root
+    group root radio system inet net_admin net_raw wakelock
+    task_profiles ServiceCapacityLow
+
+service mcfg-sh /vendor/bin/init.mcfg.sh
+    class late_start
+    user radio
+    group radio system
+    oneshot
+
+service radio-sh /vendor/bin/init.radio.sh
+    class main
+    user radio
+    group root radio
+    oneshot
+
+on property:ro.boot.hardware.revision=ANGLER-V1
+    write /sys/module/bcmdhd/parameters/nvram_path /vendor/etc/wifi/bcmdhd-pme.cal
+
+on property:ro.boot.hardware.revision=ANGLER-V2
+    write /sys/module/bcmdhd/parameters/nvram_path /vendor/etc/wifi/bcmdhd-pme.cal
+
+on property:ro.boot.wifi_cal=2
+    write /sys/module/bcmdhd/parameters/nvram_path /vendor/etc/wifi/bcmdhd-low.cal
+
+on property:ro.boot.wifi_cal=3
+    write /sys/module/bcmdhd/parameters/nvram_path /vendor/etc/wifi/bcmdhd-high.cal
+
+on property:ro.boot.hardware.sku=H1511
+    setprop ro.boot.wificountrycode US
+
+# The stock camera daemon can finish its cold-boot probe after cameraserver's
+# first enumeration. Reconnect once Android is fully up, as Angler 17.1 did.
+on property:sys.boot_completed=1
+    restart cameraserver

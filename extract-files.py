@@ -32,6 +32,13 @@ QUALCOMM_EXPLICIT_PATHS = {
 FACTORY_ONLY_CLOSURE_PATHS = {
     'vendor/lib/libaudcal.so',
     'vendor/lib/libmmcamera_imglib.so',
+    'vendor/lib/libmmcamera_isp_cs_stats46.so',
+    'vendor/lib/libmmcamera_isp_gic46.so',
+    'vendor/lib/libmmcamera_isp_gtm46.so',
+    'vendor/lib/libmmcamera_isp_ihist_stats46.so',
+    'vendor/lib/libmmcamera_isp_pedestal_correct46.so',
+    'vendor/lib/libmmcamera_isp_rs_stats46.so',
+    'vendor/lib/libmmcamera_isp_wb46.so',
     'vendor/lib/libmmcamera2_imglib_modules.so',
     'vendor/lib/libmmcamera2_isp_modules.so',
     'vendor/lib/libmmcamera2_sensor_debug.so',
@@ -144,12 +151,31 @@ RIL_AUDIO_CALLBACK_SHIM_FIXUP_PATH = 'vendor/lib64/libril-qc-qmi-1.so'
 RIL_AUDIO_CALLBACK_SHIM_FIXUP = (
     'forward AudioSystem setErrorCallback to addErrorCallback'
 )
+PERIPHERAL_REFBASE_SHIM_FIXUP_PATH = 'vendor/bin/pm-service'
+PERIPHERAL_REFBASE_SHIM_FIXUP = (
+    'load the scoped RefBase stack-object compatibility library directly; '
+    'Android init does not preserve LD_PRELOAD for this vendor service'
+)
 SENSOR_EVENTQUEUE_SHIM_FIXUP_PATHS = {
     'vendor/bin/slim_daemon',
     'vendor/lib/liboemcamera.so',
 }
 SENSOR_EVENTQUEUE_SHIM_FIXUP = (
     'forward legacy SensorManager event queue with empty attribution tag'
+)
+CAMERA_SENSOR_THREAD_FIXUP_PATH = 'vendor/lib/liboemcamera.so'
+CAMERA_SENSOR_THREAD_FIXUP = (
+    'keep the legacy camera sensor polling usable when Android 15 declines '
+    'its optional SCHED_FIFO promotion or BitTube event queue'
+)
+CAMERA_SENSOR_NDK_BRIDGE_FIXUP_PATH = (
+    'vendor/lib/libmmcamera2_stats_modules.so'
+)
+CAMERA_SENSOR_NDK_BRIDGE_FIXUP = (
+    'route legacy camera NDK sensor calls through libsensorndkbridge'
+)
+CAMERA_AF_LIFETIME_FIXUP = (
+    'cache AF sync_flag before asynchronous queue ownership transfer'
 )
 WIDEVINE_PROTOBUF_FIXUP_PATHS = {
     'vendor/lib/mediadrm/libwvdrmengine.so',
@@ -379,8 +405,55 @@ blob_fixups = {
     RIL_AUDIO_CALLBACK_SHIM_FIXUP_PATH: (
         blob_fixup().add_needed('libaudioclient_legacy_shim.so')
     ),
-    tuple(sorted(SENSOR_EVENTQUEUE_SHIM_FIXUP_PATHS)): (
+    PERIPHERAL_REFBASE_SHIM_FIXUP_PATH: (
+        blob_fixup().add_needed('libangler_peripheral_refbase_compat.so')
+    ),
+    tuple(
+        sorted(
+            SENSOR_EVENTQUEUE_SHIM_FIXUP_PATHS
+            - {CAMERA_SENSOR_THREAD_FIXUP_PATH}
+        )
+    ): (
         blob_fixup().add_needed('libsensor_eventqueue_legacy_shim.so')
+    ),
+    CAMERA_SENSOR_THREAD_FIXUP_PATH: (
+        blob_fixup()
+        .add_needed('libsensor_eventqueue_legacy_shim.so')
+        .sig_replace(
+            '6F F0 25 05 13 E0',
+            '00 25 00 BF 13 E0',
+        )
+        .sig_replace(
+            (
+                '30 68 14 F0 03 FA 04 46 68 42 14 F0 2F FA 1B 49'
+            ),
+            (
+                '00 25 0E E0 14 F0 03 FA 04 46 68 42 14 F0 '
+                '2F FA 1B 49'
+            ),
+        )
+    ),
+    CAMERA_SENSOR_NDK_BRIDGE_FIXUP_PATH: (
+        blob_fixup()
+        .replace_needed('libandroid.so', 'libsensorndkbridge.so')
+        .sig_replace(
+            (
+                '11 F0 93 F8 01 28 09 D1 65 68 01 2D 08 D1'
+            ),
+            (
+                '11 F0 4B FB 01 28 09 D1 3D 46 01 2D 08 D1'
+            ),
+        )
+        .sig_replace(
+            (
+                'FF FF 78 47 C0 46 00 C0 9F E5 0F F0 8C E0 48 5F '
+                'FD FF 00 00 00 00 00 00'
+            ),
+            (
+                'FF FF 78 47 C0 46 00 C0 9F E5 0F F0 8C E0 48 5F '
+                'FD FF 4F 68 F7 F7 3D BF'
+            ),
+        )
     ),
     tuple(sorted(WIDEVINE_PROTOBUF_FIXUP_PATHS)): (
         blob_fixup().replace_needed(
@@ -486,8 +559,15 @@ def write_blob_metadata(_ctx: PostprocessCtx):
             fixups.append(RS_FLOOR_SHIM_FIXUP)
         if file.dst == RIL_AUDIO_CALLBACK_SHIM_FIXUP_PATH:
             fixups.append(RIL_AUDIO_CALLBACK_SHIM_FIXUP)
+        if file.dst == PERIPHERAL_REFBASE_SHIM_FIXUP_PATH:
+            fixups.append(PERIPHERAL_REFBASE_SHIM_FIXUP)
         if file.dst in SENSOR_EVENTQUEUE_SHIM_FIXUP_PATHS:
             fixups.append(SENSOR_EVENTQUEUE_SHIM_FIXUP)
+        if file.dst == CAMERA_SENSOR_THREAD_FIXUP_PATH:
+            fixups.append(CAMERA_SENSOR_THREAD_FIXUP)
+        if file.dst == CAMERA_SENSOR_NDK_BRIDGE_FIXUP_PATH:
+            fixups.append(CAMERA_SENSOR_NDK_BRIDGE_FIXUP)
+            fixups.append(CAMERA_AF_LIFETIME_FIXUP)
         if file.dst in WIDEVINE_PROTOBUF_FIXUP_PATHS:
             fixups.append(WIDEVINE_PROTOBUF_FIXUP)
         if file.dst == ISP_MUTEX_FIXUP_PATH:
@@ -528,15 +608,18 @@ def write_blob_metadata(_ctx: PostprocessCtx):
 
     (vendor_path / 'README.md').write_text(
         '# Proprietary files for Google Nexus 6P (angler)\n\n'
-        'This tree is generated from official Google OPM7.181205.001 inputs. '
-        'Every admitted source file is byte-identical to the factory image. '
-        'Most are covered by the official Huawei vendor-image package or an '
-        'explicit Qualcomm extraction path. Eight closure files (two '
-        'libaudcal and six camera libraries) are factory-only because '
+        'This tree uses official Google OPM7.181205.001 inputs for Angler '
+        'hardware support. All Angler source files are byte-identical to the '
+        'factory image. Most are covered by the official Huawei vendor-image package or an '
+        'explicit Qualcomm extraction path. Fifteen closure files (two '
+        'libaudcal and thirteen camera libraries) are factory-only because '
         'the same paths in the Huawei package contain different bytes; their '
         'provenance is recorded explicitly. The ISP module is regenerated '
         'from the exact stock input with a scoped Android P mutex/FORTIFY '
-        'instruction fix whose upstream provenance is pinned in the metadata.\n\n'
+        'instruction fix whose upstream provenance is pinned in the metadata. '
+        'The stock camera statistics and OEM modules are regenerated with '
+        'scoped sensor ABI, sensor-thread scheduling, and AF message-lifetime '
+        'fixes required by Android 15.\n\n'
         'Huawei archive SHA-256: '
         '`2eb9a77de059739d33c7fad07e34034f03a93d70eea39460bb0d9278e5763053`.\n\n'
         'Qualcomm archive SHA-256: '
@@ -556,7 +639,10 @@ module = ExtractUtilsModule(
     'angler',
     'huawei',
     blob_fixups=blob_fixups,
-    namespace_imports=['vendor/qcom/opensource/dataservices'],
+    namespace_imports=[
+        'hardware/qcom/display',
+        'vendor/qcom/opensource/dataservices',
+    ],
 )
 module.add_postprocess_fn(write_blob_metadata)
 

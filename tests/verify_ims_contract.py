@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+from hashlib import sha256
 from pathlib import Path
 import re
 import sys
@@ -9,6 +10,7 @@ import xml.etree.ElementTree as ET
 
 top = Path(__file__).resolve().parents[4]
 device = top / "device/huawei/angler"
+vendor = top / "vendor/huawei/angler"
 phhims = top / "packages/apps/PhhIms"
 local_manifest = top / ".repo/local_manifests/angler.xml"
 phhims_revision = "d1f5f96dae976fe5fa1ec1a271a5fdf1597cce3e"
@@ -213,5 +215,65 @@ selected_files = (
 )
 if any("org.codeaurora.ims" in text(path) for path in selected_files):
     sys.exit("a product configuration still selects the Qualcomm IMS package")
+
+init_rc = device / "rootdir/etc/init.angler.rc"
+init_text = text(init_rc)
+for daemon in ("imsqmidaemon", "imsdatadaemon"):
+    if re.search(rf"(?m)^service\s+{daemon}\b", init_text):
+        sys.exit(f"the obsolete Qualcomm IMS init service still starts {daemon}")
+    if re.search(rf"(?m)^\s*start\s+{daemon}\s*$", init_text):
+        sys.exit(f"the obsolete Qualcomm IMS trigger still starts {daemon}")
+
+proprietary_files = text(device / "proprietary-files.txt")
+if re.search(r"(?m)^-?vendor/app/ims/ims\.apk(?:\||$)", proprietary_files):
+    sys.exit("the obsolete Qualcomm IMS APK remains in proprietary-files.txt")
+
+vendor_blueprint = text(vendor / "Android.bp")
+if re.search(
+    r'(?s)android_app_import\s*\{\s*name:\s*"ims".*?ims\.apk',
+    vendor_blueprint,
+):
+    sys.exit("the generated vendor blueprint still imports the Qualcomm IMS APK")
+vendor_makefile = text(vendor / "angler-vendor.mk")
+if re.search(r"(?m)^\s*ims\s*\\?\s*$", vendor_makefile):
+    sys.exit("the generated vendor makefile still packages the Qualcomm IMS APK")
+if (vendor / "proprietary/vendor/app/ims/ims.apk").exists():
+    sys.exit("the obsolete Qualcomm IMS APK remains in the vendor tree")
+
+retained_daemons = {
+    "ims_rtp_daemon": "4c3d9d071dd1b13c03007ed2f5ba7927d244fb9130216e5ed2924007dd4687ad",
+    "imscmservice": "d6c380b29f6f2ee19b2058973f237cdc6b41b66c0c5902cb13028b7ad1861dfd",
+    "imsdatadaemon": "3b8ba73bf62ca920aa7e00c17250a0cc900edd704d178978ae66ca0f65133dc2",
+    "imsqmidaemon": "63852473223a8a8fd4f464247c620dc5a76872ad1a6873cb493f5fbb468f9ad3",
+}
+for daemon, expected_hash in retained_daemons.items():
+    blob = vendor / f"proprietary/vendor/bin/{daemon}"
+    if not blob.is_file() or sha256(blob.read_bytes()).hexdigest() != expected_hash:
+        sys.exit(f"retained modem-side binary changed unexpectedly: {daemon}")
+    if not re.search(rf"(?m)^vendor/bin/{daemon}(?:\||$)", proprietary_files):
+        sys.exit(f"retained modem-side binary is absent from proprietary-files: {daemon}")
+    require(
+        vendor / "Android.bp",
+        rf'(?s)cc_prebuilt_binary\s*\{{\s*name:\s*"{daemon}"',
+        f"generated vendor blueprint does not retain {daemon}",
+    )
+    if not re.search(rf"(?m)^\s*{daemon}\s*\\?\s*$", vendor_makefile):
+        sys.exit(f"generated vendor makefile does not retain {daemon}")
+
+file_contexts = device / "sepolicy/vendor/file_contexts"
+for daemon in ("imsqmidaemon", "imsdatadaemon"):
+    require(
+        file_contexts,
+        rf"^/vendor/bin/{daemon}\s+u:object_r:ims_exec:s0$",
+        f"retained {daemon} SELinux label changed unexpectedly",
+    )
+
+property_contexts = device / "sepolicy/vendor/property_contexts"
+for prefix in ("sys.ims.", "persist.ims."):
+    require(
+        property_contexts,
+        rf"^{re.escape(prefix)}\s+u:object_r:angler_ims_legacy_prop:s0 prefix string$",
+        f"retained {prefix} property label changed unexpectedly",
+    )
 
 print("Angler selects source-built PhhIms as its sole MMTEL provider")
