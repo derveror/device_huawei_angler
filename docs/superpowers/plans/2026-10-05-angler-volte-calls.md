@@ -4,7 +4,7 @@
 
 **Goal:** Add a source-built Android 15 IMS provider that registers Angler on AT&T VoLTE and passes real outgoing/incoming call tests without regressing the working RIL or LTE data path.
 
-**Architecture:** A pinned Angler fork of PhhIms runs as the platform-signed privileged `me.phh.ims` service in its own process. Device and carrier RROs select it as the sole MMTEL provider; the incompatible Qualcomm IMS APK, daemons, init triggers, and SELinux policy are removed while the proven Angler QCRIL/netmgr/DPM stack remains unchanged.
+**Architecture:** A pinned Angler fork of PhhIms runs as the platform-signed privileged `me.phh.ims` service in its own process. Device and carrier RROs select it as the sole MMTEL provider; the incompatible Qualcomm IMS APK and daemon autostart are removed while the proven Angler QCRIL/netmgr/DPM binaries and policy remain unchanged during bring-up.
 
 **Tech Stack:** LineageOS 22.2 / Android 15, Soong, Kotlin/Java `ImsService`, SIP/IMS over the existing RIL IMS bearer, Python contract tests, Android RRO, vendor SELinux.
 
@@ -25,7 +25,7 @@
 
 - A missing git submodule must not make a clean checkout unbuildable; Task 1 pins this with the PhhIms tree-contract test.
 - Two overlays or two IMS packages must not compete for MMTEL; Task 2 asserts one provider, `me.phh.ims`.
-- Removed Qualcomm daemons must not reappear through generated vendor makefiles; Task 3 tests both source lists and built images.
+- The removed Qualcomm APK or daemon autostart must not reappear through generated files; Task 3 tests both source and built init/package lists.
 - An IMS failure must not restart `rild` or `com.android.phone`; Task 5 records and compares their PIDs during registration failure and recovery.
 - Carrier rejection or absent provisioning must produce a classified, sanitized diagnostic instead of modem/EFS changes; Task 5 enforces that gate before any carrier-specific patch.
 
@@ -39,11 +39,10 @@
 - `device/huawei/angler/device.mk`: packages PhhIms and the Angler-specific IMS RROs.
 - `device/huawei/angler/rro_overlays/Angler*ImsOverlay/**`: enables LTE VoLTE, disables VT/WFC, and selects `me.phh.ims`.
 - `device/huawei/angler/configs/qti_whitelist.xml`: exempts `me.phh.ims`, not the removed Qualcomm package, from idle restrictions.
-- `device/huawei/angler/rootdir/etc/init.angler.rc`: contains no Qualcomm IMS daemon lifecycle.
-- `device/huawei/angler/sepolicy/vendor/{ims.te,file.te,file_contexts,property.te,property_contexts}`: removes policy used only by the discarded daemon stack.
+- `device/huawei/angler/rootdir/etc/init.angler.rc`: contains no Qualcomm IMS daemon lifecycle during PhhIms bring-up.
 - `device/huawei/angler/tests/{verify_ims_contract.py,verify_modem_compiled_policy.py}`: source and compiled-image regression gates.
-- `device/huawei/angler/proprietary-files.txt`: excludes the obsolete IMS APK and four unused Qualcomm IMS executables.
-- `vendor/huawei/angler/{Android.bp,angler-vendor.mk,BLOB_PROVENANCE.tsv}` and matching proprietary files: regenerated vendor output after the exclusions.
+- `device/huawei/angler/proprietary-files.txt`: excludes only the incompatible IMS APK; legacy modem-side executables stay available but unstarted.
+- `vendor/huawei/angler/{Android.bp,angler-vendor.mk}` and matching proprietary APK: regenerated vendor output after that single exclusion.
 
 ---
 
@@ -52,7 +51,6 @@
 **Files:**
 - Create: `packages/apps/PhhIms/tools/test_android_tree_contract.py`
 - Modify: `packages/apps/PhhIms/Android.bp`
-- Modify: `packages/apps/PhhIms/app/src/main/AndroidManifest.xml`
 - Delete: `packages/apps/PhhIms/.gitmodules`
 - Delete: `packages/apps/PhhIms/app/jni/**`
 - Delete: `packages/apps/PhhIms/overlay/**`
@@ -75,15 +73,15 @@ Expected: FAIL because native submodules and `PhhImsOverlay` are mandatory in th
 
 Remove the two JNI module dependencies and generic overlay requirement from `Android.bp`; remove the unused submodule/native trees and generic overlay. Keep AEC disabled by `DEFAULT_DELAY_MS = 0`, retain the isolated app process and `BIND_IMS_SERVICE` manifest contract, and do not change SIP or carrier behavior pre-emptively.
 
-- [ ] **Step 4: Run source tests**
+- [ ] **Step 4: Run source tests and compile the app before device changes**
 
-Run: `python3 tools/test_android_tree_contract.py && ./gradlew test`
+Run: `python3 tools/test_android_tree_contract.py && ./gradlew test`, then select `lineage_angler-bp1a-userdebug` and run `m PhhIms -j6`.
 
-Expected: contract PASS and all JVM tests PASS.
+Expected: contract PASS, all JVM tests PASS, and the Android 15 Soong module builds before any device/vendor integration is changed.
 
 - [ ] **Step 5: Commit the fork**
 
-Run: `git add Android.bp app/src/main/AndroidManifest.xml tools/test_android_tree_contract.py .gitmodules app/jni overlay && git commit -m "build: make PhhIms reproducible for Angler"`
+Run: `git add Android.bp tools/test_android_tree_contract.py .gitmodules app/jni overlay && git commit -m "build: make PhhIms reproducible for Angler"`
 
 Expected: only PhhIms files are committed; push the commit to `lineage-22.2-angler` and record its SHA.
 
@@ -127,50 +125,43 @@ Expected: both PASS and no forbidden target or subscriber-specific value appears
 
 Run: `git add lineage.dependencies device.mk configs/qti_whitelist.xml rro_overlays/AnglerTelephonyImsOverlay/res/values/config.xml rro_overlays/AnglerCarrierConfigImsOverlay/res/xml/vendor.xml tests/verify_ims_contract.py && git commit -m "telephony: integrate source-built PhhIms"`. Keep the workspace-only exact-SHA manifest change separate from repository commits.
 
-### Task 3: Remove the failed Qualcomm IMS runtime without touching RIL
+### Task 3: Quarantine the failed Qualcomm IMS provider without touching RIL
 
 **Files:**
 - Modify: `device/huawei/angler/tests/verify_ims_contract.py`
-- Modify: `device/huawei/angler/tests/verify_modem_compiled_policy.py`
 - Modify: `device/huawei/angler/rootdir/etc/init.angler.rc`
-- Delete: `device/huawei/angler/sepolicy/vendor/ims.te`
-- Modify: `device/huawei/angler/sepolicy/vendor/file.te`
-- Modify: `device/huawei/angler/sepolicy/vendor/file_contexts`
-- Modify: `device/huawei/angler/sepolicy/vendor/property.te`
-- Modify: `device/huawei/angler/sepolicy/vendor/property_contexts`
 - Modify: `device/huawei/angler/proprietary-files.txt`
 - Regenerate: `vendor/huawei/angler/Android.bp`
 - Regenerate: `vendor/huawei/angler/angler-vendor.mk`
-- Modify: `vendor/huawei/angler/BLOB_PROVENANCE.tsv`
-- Delete: the matching obsolete APK/executables from `vendor/huawei/angler/proprietary/**`
+- Delete: `vendor/huawei/angler/proprietary/vendor/app/ims/ims.apk`
 
 **Interfaces:**
 - Consumes: the independent userspace provider from Task 2.
-- Produces: a vendor image with unchanged QCRIL/netmgr/DPM components and no Qualcomm IMS APK, daemon, init trigger, socket label, or legacy IMS property namespace.
+- Produces: a vendor image with unchanged QCRIL/netmgr/DPM/legacy-daemon binaries and policy, but no Qualcomm IMS APK or daemon startup path.
 
 - [ ] **Step 1: Add failing absence checks**
 
-Extend `verify_ims_contract.py` to reject `ims`, `ims_rtp_daemon`, `imscmservice`, `imsdatadaemon`, and `imsqmidaemon` in vendor packaging, init, file/property contexts, and proprietary source lists. Update `verify_modem_compiled_policy.py` to reject their installed paths while retaining every existing QCRIL, qmuxd, netmgrd, rild, DPM, audio, and RFSA assertion.
+Extend `verify_ims_contract.py` to reject the exact `ims` APK module in vendor packaging/proprietary lists and reject `imsqmidaemon`/`imsdatadaemon` service or trigger blocks in `init.angler.rc`. Explicitly allow the four legacy daemon binaries and their existing policy to remain installed but inert during bring-up.
 
 - [ ] **Step 2: Verify the old runtime is still detected**
 
 Run: `python3 tests/verify_ims_contract.py`
 
-Expected: FAIL and name the first remaining legacy IMS component.
+Expected: FAIL and name the remaining APK or init startup path.
 
 - [ ] **Step 3: Remove only the obsolete IMS runtime**
 
-Delete the two IMS services and triggers from `init.angler.rc`; remove their dedicated SELinux domain/socket/property definitions; delete the five proprietary-file entries; regenerate the vendor blueprint and makefile using the existing Angler extraction tooling. Keep the legacy IMS libraries because QCRIL dependency removal is not proven and they are not executable providers.
+Delete only the two IMS service/trigger blocks from `init.angler.rc`; delete only the stock/donor IMS APK entry; regenerate the vendor blueprint and makefile using the existing Angler tooling. Keep all Qualcomm IMS daemon/library binaries and their SELinux labels unchanged so this OTA cannot accidentally remove a hidden modem dependency.
 
 - [ ] **Step 4: Verify source policy and generated vendor output**
 
 Run: `python3 tests/verify_ims_contract.py && git -C vendor/huawei/angler diff --check && git -C device/huawei/angler diff --check`
 
-Expected: PASS; generated vendor packaging contains none of the five removed runtime modules.
+Expected: PASS; generated vendor packaging contains no `ims` APK, built init starts no Qualcomm IMS daemon, and the four legacy executables remain byte-identical to the known-good vendor tree.
 
 - [ ] **Step 5: Commit explicit paths in each dirty repository**
 
-Commit the device cleanup as `telephony: remove incompatible Qualcomm IMS runtime` and the generated vendor cleanup as `angler: drop obsolete Qualcomm IMS executables`, staging only the files listed in this task.
+Commit the device cleanup as `telephony: disable incompatible Qualcomm IMS provider` and the generated vendor cleanup as `angler: drop obsolete Qualcomm IMS APK`, staging only the files listed in this task.
 
 ### Task 4: Build and inspect the minimal integration before OTA
 
@@ -202,7 +193,7 @@ Expected: success; then `python3 device/huawei/angler/tests/verify_modem_compile
 
 - [ ] **Step 4: Inspect image contents**
 
-Verify product contains one platform-signed `PhhIms.apk`; both installed RROs resolve to `me.phh.ims`; vendor contains none of the five removed Qualcomm IMS executables/APK; radio, qmuxd, netmgrd, DPM, and baseband files match the known-good image hashes.
+Verify product contains one platform-signed `PhhIms.apk`; both installed RROs resolve to `me.phh.ims`; vendor contains no Qualcomm IMS APK and starts no Qualcomm IMS daemon; the retained daemon, radio, qmuxd, netmgrd, DPM, and baseband files match the known-good hashes.
 
 - [ ] **Step 5: Build the incremental OTA and preserve rollback artifacts**
 
